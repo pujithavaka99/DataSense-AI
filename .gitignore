@@ -1,0 +1,18 @@
+# Virtual environment
+venv/
+
+# API keys and environment variables
+.env
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Local datasets
+data/
+
+# Streamlit secrets
+.streamlit/secrets.toml
