@@ -35,7 +35,7 @@ from utils.general_analytics import (
     detect_id_columns
 )
 
-
+from agents.data_quality_agent import DataQualityAgent
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
@@ -182,6 +182,7 @@ else:
         st.error("Dataset could not be loaded.")
 
         st.stop()
+    data_quality_agent = DataQualityAgent()
 
 
 # --------------------------------------------------
@@ -447,7 +448,164 @@ elif page == "🔍 Data Quality":
     st.caption(
         "Inspect missing values, duplicates, and data consistency."
     )
+    # Run Data Quality Agent
 
+    quality_report = data_quality_agent.run_quality_analysis(df)
+
+    quality_score = quality_report["Data Quality Score"]
+
+    quality_rating = data_quality_agent.get_quality_rating(
+        quality_score
+    )
+    quality_explanation = data_quality_agent.get_quality_explanation(
+    quality_score
+)
+    # Display Data Quality Score
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        st.metric(
+            "Data Quality Score",
+            f"{quality_score}%"
+        )
+
+    with col2:
+
+        st.metric(
+            "Quality Rating",
+            quality_rating
+        )
+    st.info(quality_explanation)
+    # Generate Data Quality Recommendations
+
+    recommendations = data_quality_agent.generate_recommendations(df)
+
+    # Data Quality Recommendations
+
+    st.subheader("🤖 Agent Recommendations")
+
+    for recommendation in recommendations:
+
+        severity = recommendation["severity"]
+
+        issue = recommendation["issue"]
+
+        message = recommendation["recommendation"]
+        with st.expander(f"{severity} — {issue}", expanded=True):
+            if severity == "Critical":
+
+                st.error(f"🔴 {issue}: {message}")
+
+            elif severity == "Warning":
+
+                st.warning(f"🟠 {issue}: {message}")
+
+            else:
+
+                st.info(f"🔵 {issue}: {message}")
+    # Data Quality Summary
+    summary = data_quality_agent.generate_quality_summary(df)
+    # Column-Level Data Quality Issues
+
+    st.subheader("🔎 Column-Level Data Quality Issues")
+
+    column_issues = []
+
+    # Missing values
+    missing_df = quality_report["Missing Values"]
+
+    for column, row in missing_df.iterrows():
+
+        column_issues.append({
+            "Column": column,
+            "Issue": "Missing Values",
+            "Count": int(row["Missing Count"]),
+            "Percentage": f'{row["Missing Percentage"]:.2f}%'
+        })
+
+    # Empty strings
+    empty_string_analysis = quality_report["Empty String Analysis"]
+
+    for column, count in empty_string_analysis.items():
+
+        percentage = (count / len(df)) * 100 if len(df) > 0 else 0
+
+        column_issues.append({
+            "Column": column,
+            "Issue": "Empty Strings",
+            "Count": count,
+            "Percentage": f"{percentage:.2f}%"
+        })
+
+    # Constant columns
+    constant_columns = quality_report["Constant Columns"]
+
+    for column in constant_columns:
+
+        column_issues.append({
+            "Column": column,
+            "Issue": "Constant Column",
+            "Count": "-",
+            "Percentage": "-"
+        })
+
+    # Display issues
+    if column_issues:
+
+        issues_df = pd.DataFrame(column_issues)
+
+        st.dataframe(
+    issues_df,
+    use_container_width=True,
+    hide_index=True,
+    column_config={
+        "Column": st.column_config.TextColumn(
+            "Column",
+            width="medium"
+        ),
+        "Issue": st.column_config.TextColumn(
+            "Issue",
+            width="medium"
+        ),
+        "Count": st.column_config.NumberColumn(
+            "Count",
+            width="small"
+        ),
+        "Percentage": st.column_config.TextColumn(
+            "Percentage",
+            width="small"
+        )
+    }
+)
+    else:
+
+        st.success("No column-level data quality issues detected.")
+
+    st.subheader("📋 Data Quality Summary")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Total Rows", summary["Total Rows"])
+
+    with col2:
+        st.metric("Total Columns", summary["Total Columns"])
+
+    with col3:
+        st.metric("Missing Values", summary["Missing Values"])
+
+    with col4:
+        st.metric("Duplicate Rows", summary["Duplicate Rows"])
+
+    col5, col6 = st.columns(2)
+
+    with col5:
+        st.metric("Empty Strings", summary["Empty Strings"])
+
+    with col6:
+        st.metric("Constant Columns", summary["Constant Columns"])
     # Missing values
 
     missing_values = df.isnull().sum()
@@ -508,35 +666,7 @@ elif page == "🔍 Data Quality":
 
     st.divider()
 
-    # Missing value details
 
-    st.subheader("📋 Missing Values by Column")
-
-    missing_df = pd.DataFrame({
-        "Column": missing_values.index,
-        "Missing Values": missing_values.values,
-        "Missing Percentage": (
-            missing_values.values / len(df) * 100
-        ).round(2)
-    })
-
-    missing_df = missing_df[
-        missing_df["Missing Values"] > 0
-    ]
-
-    if missing_df.empty:
-
-        st.success("No missing values found!")
-
-    else:
-
-        st.dataframe(
-            missing_df,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    st.divider()
 
     # Data preview
 
