@@ -35,7 +35,11 @@ from utils.general_analytics import (
     detect_id_columns
 )
 
+
+
 from agents.data_quality_agent import DataQualityAgent
+from agents.data_analyst_agent import DataAnalystAgent
+
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
@@ -182,8 +186,15 @@ else:
         st.error("Dataset could not be loaded.")
 
         st.stop()
-    data_quality_agent = DataQualityAgent()
 
+
+# --------------------------------------------------
+# INITIALIZE AGENTS
+# --------------------------------------------------
+
+data_quality_agent = DataQualityAgent()
+
+data_analyst_agent = DataAnalystAgent()
 
 # --------------------------------------------------
 # CLEAN DATA
@@ -318,6 +329,7 @@ if (
 else:
 
     quality_status = "REQUIRES ATTENTION"
+
 
 
 # --------------------------------------------------
@@ -928,8 +940,13 @@ elif page == "🧠 AI Insights":
     st.title("🧠 AI Insights")
 
     st.caption(
-        "Business insights and actionable recommendations"
+        "Business insights, statistical findings, "
+        "and actionable recommendations"
     )
+
+    # --------------------------------------------------
+    # TELCO BUSINESS INSIGHTS
+    # --------------------------------------------------
 
     if is_telco_dataset:
 
@@ -941,7 +958,7 @@ elif page == "🧠 AI Insights":
 
         st.divider()
 
-        st.subheader("🎯 Recommendations")
+        st.subheader("🎯 Business Recommendations")
 
         recommendations = [
             "Focus retention campaigns on month-to-month customers.",
@@ -954,25 +971,167 @@ elif page == "🧠 AI Insights":
 
             st.success(recommendation)
 
+        st.divider()
+
+
+    # --------------------------------------------------
+    # DATA ANALYST AGENT
+    # --------------------------------------------------
+
+    st.subheader("🤖 Data Analyst Agent")
+
+    analyst_results = data_analyst_agent.run_analysis(df)
+
+
+    # --------------------------------------------------
+    # KEY FINDINGS
+    # --------------------------------------------------
+
+    st.subheader("💡 Key Findings")
+
+    key_findings = analyst_results.get("Key Findings", [])
+
+    if isinstance(key_findings, list):
+
+        for finding in key_findings:
+
+            st.info(finding)
+
     else:
 
-        st.warning(
-            "Business insights are currently optimized for "
-            "the IBM Telco Customer Churn dataset."
-        )
+        st.info(key_findings)
 
-        st.info(
-            "General AI-powered insights for uploaded datasets "
-            "will be added in the next development stage."
-        )
-
-
-# --------------------------------------------------
-# FOOTER
+    # --------------------------------------------------
+# STATISTICAL INSIGHTS
 # --------------------------------------------------
 
-st.divider()
+    with st.expander("📈 Statistical Insights", expanded=False):
 
-st.caption(
-    "DataSense AI | Autonomous Multi-Agent Data Intelligence System"
-)
+        statistical_insights = analyst_results.get(
+        "Statistical Insights", []
+    )
+
+        if isinstance(statistical_insights, list):
+
+            for insight in statistical_insights:
+
+                st.write(f"• {insight}")
+
+        elif isinstance(statistical_insights, str):
+
+            st.write(statistical_insights)
+
+
+    # --------------------------------------------------
+# NUMERICAL ANALYSIS
+# --------------------------------------------------
+
+    with st.expander("🔢 Numerical Analysis", expanded=False):
+
+        numerical_analysis = analyst_results.get(
+        "Numerical Analysis", {}
+        )
+
+        if isinstance(numerical_analysis, dict) and numerical_analysis:
+
+            numerical_df = pd.DataFrame(numerical_analysis).T
+
+            st.dataframe(
+                numerical_df,
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(numerical_analysis)
+
+    # --------------------------------------------------
+# CATEGORICAL ANALYSIS
+# --------------------------------------------------
+
+    with st.expander("📋 Categorical Analysis", expanded=False):
+
+        categorical_analysis = analyst_results.get(
+            "Categorical Analysis", {}
+        )
+
+        if isinstance(categorical_analysis, dict) and categorical_analysis:
+
+            categorical_df = pd.DataFrame(
+                categorical_analysis
+            ).T
+
+            st.dataframe(
+            categorical_df,
+            use_container_width=True
+            )
+
+            for column, details in categorical_analysis.items():
+
+                distribution = details.get(
+                    "Value Distribution", {}
+                )
+
+                if distribution:
+
+                    with st.expander(
+                        f"View distribution of {column}"
+                    ):
+
+                        st.write(distribution)
+
+        else:
+
+            st.info(categorical_analysis)
+
+
+    # --------------------------------------------------
+# OUTLIER ANALYSIS
+# --------------------------------------------------
+
+    with st.expander("🚨 Outlier Analysis", expanded=False):
+
+        outlier_analysis = analyst_results.get(
+            "Outlier Analysis", {}
+        )
+
+        if isinstance(outlier_analysis, dict) and outlier_analysis:
+
+            outlier_df = pd.DataFrame(
+                outlier_analysis
+            ).T
+
+            st.dataframe(
+                outlier_df,
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(outlier_analysis)
+
+
+    # --------------------------------------------------
+# CORRELATION ANALYSIS
+# --------------------------------------------------
+
+    with st.expander("🔗 Correlation Analysis", expanded=False):
+
+        correlation_analysis = analyst_results.get(
+            "Correlation Analysis", {}
+        )
+
+        if isinstance(correlation_analysis, dict) and correlation_analysis:
+
+            correlation_df = pd.DataFrame(
+                correlation_analysis
+            ).T
+
+            st.dataframe(
+                correlation_df,
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(correlation_analysis)
