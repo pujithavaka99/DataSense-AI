@@ -31,7 +31,8 @@ from utils.general_analytics import (
     create_general_visualization,
     recommend_chart_type,
     create_correlation_heatmap,
-    explain_correlations
+    explain_correlations,
+    detect_id_columns
 )
 
 
@@ -729,8 +730,15 @@ elif page == "📈 Business Analytics":
                 format_func=format_column_name
             )
             numerical_columns = df.select_dtypes(
-    include="number"
-).columns.tolist()
+                 include="number"
+            ).columns.tolist()
+
+            id_columns = detect_id_columns(df)
+
+            numerical_columns = [
+                 column for column in numerical_columns
+                 if column not in id_columns
+            ]
             # Automatic chart recommendation
 
             recommended_chart, recommendation_reason = (
@@ -778,11 +786,7 @@ elif page == "📈 Business Analytics":
 
         for insight in correlation_insights:
             st.markdown(f"• {insight}")
-        else:
-
-            st.warning(
-                "No suitable columns were found for visualization."
-            )
+       
 
 
 # --------------------------------------------------

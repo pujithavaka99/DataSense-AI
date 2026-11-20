@@ -322,48 +322,80 @@ def create_correlation_heatmap(df, numerical_columns):
 
     return fig
 def explain_correlations(df, numerical_columns):
+
     if len(numerical_columns) < 2:
         return ["Not enough numerical columns to analyze correlations."]
 
     correlation_matrix = df[numerical_columns].corr()
 
-    insights = []
+    correlation_pairs = []
 
-    # Avoid duplicate pairs and self-correlations
+    # Find unique correlation pairs
     for i in range(len(numerical_columns)):
         for j in range(i + 1, len(numerical_columns)):
+
             col1 = numerical_columns[i]
             col2 = numerical_columns[j]
 
             correlation = correlation_matrix.loc[col1, col2]
 
-            if abs(correlation) >= 0.7:
+            correlation_pairs.append({
+                "column_1": col1,
+                "column_2": col2,
+                "correlation": correlation
+            })
 
-                strength = "strong"
+    # Sort by absolute correlation strength
+    correlation_pairs.sort(
+        key=lambda x: abs(x["correlation"]),
+        reverse=True
+    )
 
-                if correlation > 0:
-                    relationship = "positive"
-                    explanation = (
-                        "As one variable increases, "
-                        "the other tends to increase."
-                    )
-                else:
-                    relationship = "negative"
-                    explanation = (
-                        "As one variable increases, "
-                        "the other tends to decrease."
-                    )
+    # Get top 3 correlations
+    top_correlations = correlation_pairs[:3]
 
-                insights.append(
-                    f"**{strength.title()} {relationship} correlation:** "
-                    f"`{col1}` and `{col2}` "
-                    f"({correlation:.2f}). {explanation}"
-                )
+    insights = []
 
-    if not insights:
+    for pair in top_correlations:
+
+        col1 = pair["column_1"]
+        col2 = pair["column_2"]
+        correlation = pair["correlation"]
+
+        if correlation >= 0.7:
+            strength = "Strong positive"
+            explanation = (
+                "Both variables tend to increase together."
+            )
+
+        elif correlation <= -0.7:
+            strength = "Strong negative"
+            explanation = (
+                "One variable tends to increase as the other decreases."
+            )
+
+        elif correlation >= 0.4:
+            strength = "Moderate positive"
+            explanation = (
+                "The variables show a moderate positive relationship."
+            )
+
+        elif correlation <= -0.4:
+            strength = "Moderate negative"
+            explanation = (
+                "The variables show a moderate negative relationship."
+            )
+
+        else:
+            strength = "Weak"
+            explanation = (
+                "The relationship between these variables is weak."
+            )
+
         insights.append(
-            "No strong correlations (above 0.70 or below -0.70) "
-            "were identified in this dataset."
+            f"**{strength} correlation:** "
+            f"`{col1}` and `{col2}` "
+            f"({correlation:.2f}). {explanation}"
         )
 
     return insights
